@@ -478,13 +478,14 @@ cupdlp_retcode PDHG_Solve(CUPDLPwork *pdhg) {
                         (timers->dSolvingTime > settings->dTimeLim);
     int bool_print = 0;
 #if CUPDLP_DEBUG
-    bool_checking = (bool_checking || !(timers->nIter % CUPDLP_DEBUG_INTERVAL));
+    bool_checking =
+        (bool_checking || !(timers->nIter % settings->nLogInterval));
     bool_print = bool_checking;
 #else
     bool_checking =
-        (bool_checking || !(timers->nIter % CUPDLP_RELEASE_INTERVAL));
+        (bool_checking || !(timers->nIter % settings->nChkInterval));
     bool_print =
-        (bool_checking && !(timers->nIter % (CUPDLP_RELEASE_INTERVAL *
+        (bool_checking && !(timers->nIter % (settings->nChkInterval *
                                              settings->nLogInterval))) ||
         (timers->nIter == (settings->nIterLim - 1)) ||
         (timers->dSolvingTime > settings->dTimeLim);

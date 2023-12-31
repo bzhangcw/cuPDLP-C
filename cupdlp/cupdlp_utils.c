@@ -554,6 +554,9 @@ cupdlp_retcode getUserParam(int argc, char **argv,
     } else if (strcmp(argv[i], "-nLogInt") == 0) {
       ifChangeIntParam[N_LOG_INTERVAL] = true;
       intParam[N_LOG_INTERVAL] = atoi(argv[i + 1]);
+    } else if (strcmp(argv[i], "-nChkInt") == 0) {
+      ifChangeIntParam[N_CHK_INTERVAL] = true;
+      intParam[N_CHK_INTERVAL] = atoi(argv[i + 1]);
     } else if (strcmp(argv[i], "-ifPresolve") == 0) {
       ifChangeIntParam[IF_PRESOLVE] = true;
       intParam[IF_PRESOLVE] = atoi(argv[i + 1]);
@@ -584,6 +587,10 @@ cupdlp_retcode settings_SetUserParam(CUPDLPsettings *settings,
 
   if (ifChangeIntParam[N_LOG_INTERVAL]) {
     settings->nLogInterval = intParam[N_LOG_INTERVAL];
+  }
+
+  if (ifChangeIntParam[N_CHK_INTERVAL]) {
+    settings->nChkInterval = intParam[N_CHK_INTERVAL];
   }
 
   if (ifChangeIntParam[IF_SCALING]) {
@@ -733,6 +740,7 @@ cupdlp_retcode settings_Alloc(CUPDLPsettings *settings) {
   cupdlp_retcode retcode = RETCODE_OK;
   settings->nIterLim = INFINITY;
   settings->nLogInterval = 100;
+  settings->nChkInterval = 40;
   // settings->dTimeLim = INFINITY;
   settings->dTimeLim = 3600;
   settings->ifScaling = true;

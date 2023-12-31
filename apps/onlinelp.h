@@ -5,9 +5,6 @@
 #ifndef CUPDLP_ONLINELP_H
 #define CUPDLP_ONLINELP_H
 
-#define DBG_ONLINE_LP (0)
-
-
 #include <Eigen/Dense>
 #include <Eigen/Sparse>
 #include <iostream>
@@ -22,6 +19,5 @@ using eigen_array_int = ArrayXi;
 using eigen_buff = Eigen::Map<ArrayXd>;
 
 SpMat getRandomSpMat(size_t nRows, size_t nCols, double p);
-
 
 #endif  // CUPDLP_ONLINELP_H

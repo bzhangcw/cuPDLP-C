@@ -26,9 +26,6 @@ extern "C" {
 
 #define PDHG_PROJECT_INITIAL_X (0)
 #define SHOW_DEFINE(x) printf("%s=%s\n", #x, STR(x))
-
-#define CUPDLP_DEBUG_INTERVAL (40)
-#define CUPDLP_RELEASE_INTERVAL (40)
 #define CUPDLP_DUMP_ITERATES_STATS (1)
 #define CUPDLP_DUMP_LINESEARCH_STATS (1)
 #define CUPDLP_INEXACT_EPS (1e-4)
@@ -96,9 +93,10 @@ typedef enum {
   IF_L2_SCALING,
   IF_PC_SCALING,
   N_LOG_INTERVAL,
+  N_CHK_INTERVAL,
   IF_PRESOLVE,
 } CUPDLP_INT_USER_PARAM_INDEX;
-#define N_INT_USER_PARAM 10
+#define N_INT_USER_PARAM 11
 typedef enum {
   D_SCALING_LIMIT = 0,
   D_PRIMAL_TOL,
@@ -178,6 +176,7 @@ struct CUPDLP_SETTINGS {
   cupdlp_int nIterLim;
   cupdlp_float dTimeLim;
   cupdlp_int nLogInterval;
+  cupdlp_int nChkInterval;
 
   // restart
   pdhg_restart eRestartMethod;

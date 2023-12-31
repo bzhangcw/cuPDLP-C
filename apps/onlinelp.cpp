@@ -12,20 +12,29 @@
 //        0 <= x <=using Eigen::MatrixXf;
 
 SpMat getRandomSpMat(size_t nRows, size_t nCols, double p) {
-  std::default_random_engine gen;
+  using namespace std;
+  std::random_device rand_dev;
+  std::mt19937 generator(rand_dev());
   std::uniform_real_distribution<double> v(0.0, 1.0);
+  std::uniform_int_distribution<int> vr(0, nRows - 1);
+  std::uniform_int_distribution<int> vc(0, nCols - 1);
 
+  std::cout << "generating sparse matrix" << std::endl;
   std::vector<Eigen::Triplet<double> > tripletList;
   long elems = long(nRows * nCols * p);
   tripletList.reserve(elems);
   SpMat mat(nRows, nCols);
   std::cout << "number of elems: " << elems << std::endl;
-  for (int i = 0; i < nRows; ++i)
-    for (int j = 0; j < nCols; ++j) {
-      double val = v(gen);
-      if (val < p) tripletList.emplace_back(i, j, val);
-    }
+  for (auto t = 0; t <= elems; t++) {
+    int i = vr(generator);
+    int j = vc(generator);
+    double val = v(generator);
+    tripletList.emplace_back(i, j, val);
+  }
+  std::cout << "emplace back finished" << std::endl;
   mat.setFromTriplets(tripletList.begin(), tripletList.end());
+
+  std::cout << "generating sparse matrix finished" << std::endl;
   return mat;
 }
 
@@ -35,7 +44,9 @@ int main(int argc, char *argv[]) {
   int nRows = 0;
   int nEqs = 0;  // no inequalities.
   double p = 0.1;
-  cupdlp_bool ifSaveSol = false;
+  bool ifSaveSol = false;
+  bool verbose = false;
+  long nnz = 0;
   for (auto i = 0; i < argc - 1; i++) {
     if (strcmp(argv[i], "-out") == 0) {
       fout = argv[i + 1];
@@ -45,6 +56,9 @@ int main(int argc, char *argv[]) {
       nCols = atoi(argv[i + 1]);
     } else if (strcmp(argv[i], "-p") == 0) {
       p = atof(argv[i + 1]);
+    } else if (strcmp(argv[i], "-v") == 0) {
+      verbose = true;
+    } else {
     }
   }
 
@@ -61,10 +75,16 @@ int main(int argc, char *argv[]) {
   // ---------------------------------------------------
   // generate a random online LP instance
   eigen_array pi = ArrayXd::Random(nCols).abs() * -1.0;
-  std::cout << "generating sparse matrix" << std::endl;
+  eigen_array b = -ArrayXd::Random(nRows).abs() * nCols / 10000;
+  int *outIter, *innerIter;
+  double *valueIter;
+
   SpMat A = getRandomSpMat(nRows, nCols, p) * -1.0;
-  eigen_array b = ArrayXd::Random(nRows).abs() * -nCols / 10;
-  long nnz = A.nonZeros();
+  nnz = A.nonZeros();
+  outIter = A.outerIndexPtr();
+  innerIter = A.innerIndexPtr();
+  valueIter = A.valuePtr();
+
   // new idx is unchanged since it is not permuted;
   eigen_array_int constraint_new_arr(nRows);
   for (auto i = 0; i < nRows; ++i) constraint_new_arr[i] = i;
@@ -74,14 +94,13 @@ int main(int argc, char *argv[]) {
   eigen_array upper(nCols);
   lower.setZero();
   upper.setOnes();
-  std::cout << "generating sparse matrix finished" << std::endl;
 
-#if DBG_ONLINE_LP
-  std::cout << pi.transpose() << std::endl;
-  std::cout << A << std::endl;
-  std::cout << lower.transpose() << std::endl;
-  std::cout << upper.transpose() << std::endl;
-#endif
+  if (verbose) {
+    std::cout << pi.transpose() << std::endl;
+    std::cout << A << std::endl;
+    std::cout << lower.transpose() << std::endl;
+    std::cout << upper.transpose() << std::endl;
+  }
 
   auto *scaling = (CUPDLPscaling *)cupdlp_malloc(sizeof(CUPDLPscaling));
 
@@ -105,9 +124,9 @@ int main(int argc, char *argv[]) {
   csc_cpu->nRows = nRows;
   csc_cpu->nCols = nCols;
   csc_cpu->nMatElem = nnz;
-  csc_cpu->colMatBeg = A.outerIndexPtr();
-  csc_cpu->colMatIdx = A.innerIndexPtr();
-  csc_cpu->colMatElem = A.valuePtr();
+  csc_cpu->colMatBeg = outIter;
+  csc_cpu->colMatIdx = innerIter;
+  csc_cpu->colMatElem = valueIter;
 
 #if !(CUPDLP_CPU)
   csc_cpu->cuda_csc = NULL;
